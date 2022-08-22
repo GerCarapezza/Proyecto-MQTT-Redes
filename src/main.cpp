@@ -12,16 +12,20 @@ const char* password = "carapezza3574";
 //---------------MQTT-------------------------------
 const char* server  = "broker.hivemq.com";
 const int port      = 1883;
-const char* Client_ID       = "ubsafiugijsiaifhubafdv564521454";
+const char* Client_ID       = "ubsafiugijsiaifhubafdv564asd521454";
 const char* topic_subscribe = "/ET28/REDES/GERMAN/RGB";
 const char* topic_publish   = "/ET28/REDES/GERMAN/TEMPERATURA";
 
 //--------------PINES-------------------------------
 int ledpin = 26; //solo para probar
 
-int RED = 32;
-int GREEN = 35;
-int BLUE = 34;
+int RED = 12;
+int GREEN = 14;
+int BLUE = 27;
+// #define RED, 32;
+// #define GREEN, 35;
+// #define BLUE, 36;
+
 
 
 // unsigned long currentTime=0;
@@ -55,16 +59,22 @@ void wifiInit() {
 
 void callback(char* topic, byte* payload, unsigned int length) {
   String incoming = "";
-  Serial.print("Mensaje recibido ->");
+  Serial.print("Mensaje recibido ->  ");
   Serial.print(topic);
   Serial.println("");
+  char playload_string[length + 1];
 
+  memcpy(playload_string, payload, length);
+  playload_string[length] = '\0';
+  var = atoi(playload_string);
 
- for (int i=0;i<length;i++) {
+ for (int i = 0; i < length; i++) {
     incoming += (char)payload[i];
   }
   incoming.trim();
   Serial.println("Mensaje->" + incoming);
+
+
 }
 
 
@@ -98,6 +108,9 @@ void reconnect() {
 
 void setup(){
   pinMode(ledpin,OUTPUT);
+  pinMode(RED, OUTPUT);
+  pinMode(GREEN, OUTPUT);
+  pinMode(BLUE, OUTPUT);
   Serial.begin(115200);
   delay(10);
   wifiInit();
@@ -115,17 +128,15 @@ void loop()
 
 
 
-  if(var == 0)
-  {
-    digitalWrite(ledpin,LOW);
-    Serial.print("String: ");
-    Serial.println(resultS);
+  if(var == 0){
+    digitalWrite(RED,LOW);
+    digitalWrite(GREEN,LOW);
+    digitalWrite(BLUE,LOW);
   }
-  else if (var == 1)
-  {
-    digitalWrite(ledpin,HIGH);
-    Serial.print("String: ");
-    Serial.println(resultS);
+  else if (var == 1){
+    digitalWrite(RED,HIGH);
+    digitalWrite(GREEN,HIGH);
+    digitalWrite(BLUE,HIGH);
   }
 
   // sendData();
