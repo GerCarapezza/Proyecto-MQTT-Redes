@@ -36,9 +36,17 @@ unsigned long previousTime=0;
 int var_R = 0;
 int var_G = 0;
 int var_B = 0;
-bool var = 0; // valor SW
+bool SW = 0; // valor SW
 
-//----WIFI settings-----------------------
+//--------PWM----------------------------------------
+const int freq = 5000;
+const int ledChannel_R = 0;
+const int ledChannel_G = 1;
+const int ledChannel_B = 2;
+const int resolution = 8;
+
+
+//----WIFI settings----------------------------------
 void wifiInit() {
   Serial.print("Conectándose a ");
   Serial.println(ssid);
@@ -61,7 +69,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
   char playload_string[length + 1];
 
 
-//---para recibir un mensaje como string----------
+ //---para recibir un mensaje como string----------
  for (int i = 0; i < length; i++) {
     incoming.concat((char)payload[i]);
   }
@@ -70,7 +78,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.println("");
   // Serial.println("Mensaje-> " + incoming );
 
-//-----------------NO USAR------------------------
+ //-----------------NO USAR------------------------
   // memcpy(playload_string, payload, length);
   // playload_string[length] = '\0';
   // var = atoi(playload_string);
@@ -88,34 +96,34 @@ void callback(char* topic, byte* payload, unsigned int length) {
   // var_B = atoi(playload_string);
   // // Serial.println("Mensaje_B-> " + var_B);
 
-
-  if(strcmp(topic, topic_subscribe_RED) == 0){
+//comprueba de que topico viene el dato y lo convierte en int
+  if(strcmp(topic, topic_subscribe_RED) == 0){ //comprueba led rojo
     memcpy(playload_stringR, payload, length);
     playload_stringR[length] = '\0';
-    var_R = atoi(playload_stringR);
+    var_R = atoi(playload_stringR); // convierte de string a int
     Serial.print("Mensaje_R->");
     Serial.println(var_R);
   }
-  else if (strcmp(topic, topic_subscribe_GREEN) == 0){
+  else if (strcmp(topic, topic_subscribe_GREEN) == 0){ //comprueba led verde
     memcpy(playload_stringG, payload, length);
     playload_stringG[length] = '\0';
     var_G = atoi(playload_stringG);
     Serial.print("Mensaje_G->");
     Serial.println(var_G);
   }
-  else if (strcmp(topic, topic_subscribe_BLUE) == 0){
+  else if (strcmp(topic, topic_subscribe_BLUE) == 0){ //comprueba led azul
     memcpy(playload_stringB, payload, length);
     playload_stringB[length] = '\0';
     var_B = atoi(playload_stringB);
     Serial.print("Mensaje_B->");
     Serial.println(var_B);
   }
-  else if (strcmp(topic, topic_subscribe_SW) == 0){
+  else if (strcmp(topic, topic_subscribe_SW) == 0){ //comprueba switch
     memcpy(playload_string, payload, length);
     playload_string[length] = '\0';
-    var = atoi(playload_string);
+    SW = atoi(playload_string);
     Serial.print("Mensaje_SW->" );
-    Serial.println(var);
+    Serial.println(SW);
   }
 
 
@@ -155,20 +163,28 @@ void setup(){
   pinMode(GREEN, OUTPUT);
   pinMode(BLUE, OUTPUT);
   Serial.begin(115200);
+  //config señal pwm
+  ledcSetup(ledChannel_R, freq, resolution);
+  ledcSetup(ledChannel_G, freq, resolution);
+  ledcSetup(ledChannel_B, freq, resolution);
+  //asigna cada salida a un pwm
+  ledcAttachPin(RED, ledChannel_R);
+  ledcAttachPin(GREEN, ledChannel_G);
+  ledcAttachPin(BLUE, ledChannel_B);
   delay(10);
   wifiInit();
   mqttClient.setServer(server, port);
   mqttClient.setCallback(callback);
 }
 
-void loop()
-{
+void loop(){
    if (!mqttClient.connected()) {
     reconnect();
   }
   mqttClient.loop();
 
 //--- para implementar un SW de encendido del led---------
+//--------------------------------------------------------
   // if(var == 0){
   //   digitalWrite(RED,LOW);
   //   digitalWrite(GREEN,LOW);
@@ -179,23 +195,10 @@ void loop()
   //   digitalWrite(BLUE,HIGH);
   // }
 
-  if(var_R == 0){
-    digitalWrite(RED,LOW);
-  }
-  if(var_G == 0){
-    digitalWrite(GREEN,LOW);
-  }
-  if(var_B == 0){
-    digitalWrite(BLUE,LOW);
-  }
-  if(var_R >= 1){
-    digitalWrite(RED,HIGH);
-  }
-  if(var_G >= 1){
-    digitalWrite(GREEN,HIGH);
-  }
-  if(var_B >= 1){
-    digitalWrite(BLUE,HIGH);
+  if(true){
+    ledcWrite(ledChannel_R, var_R);
+    ledcWrite(ledChannel_G, var_G);
+    ledcWrite(ledChannel_B, var_B);
   }
 
   sendData();
