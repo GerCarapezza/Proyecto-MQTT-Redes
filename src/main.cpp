@@ -16,21 +16,21 @@ const char* server  = "broker.hivemq.com";
 const int port      = 1883;
 const char* Client_ID       = "ubsajhfyuf3654hv64asd521454";
 const char* topic_subscribe = "/ET28/REDES/IG/LED/#";
-const char* topic_subscribe_SW   = "/ET28/REDES/IG/LED/SW";
+const char* topic_subscribe_SW    = "/ET28/REDES/IG/LED/SW";
 const char* topic_subscribe_RED   = "/ET28/REDES/IG/LED/R";
 const char* topic_subscribe_GREEN = "/ET28/REDES/IG/LED/G";
 const char* topic_subscribe_BLUE  = "/ET28/REDES/IG/LED/B";
-const char* topic_publish_TEMP   = "/ET28/REDES/IG/SENSOR/TEMP";
+const char* topic_publish_TEMP  = "/ET28/REDES/IG/SENSOR/TEMP";
 const char* topic_publish_HUM   = "/ET28/REDES/IG/SENSOR/HUM";
 
 //--------------PINES-------------------------------
-#define RED 13
+#define RED   13
 #define GREEN 12
-#define BLUE 14
+#define BLUE  14
 
 //para funcion milis
-unsigned long currentTime=0;
-unsigned long previousTime=0;
+unsigned long currentTime = 0;
+unsigned long previousTime = 0;
 
 //variables valores cada led
 int var_R = 0;
@@ -47,7 +47,7 @@ const int resolution = 8;
 
 
 //----WIFI settings----------------------------------
-void wifiInit() {
+void wifiInit(){
   Serial.print("Conectándose a ");
   Serial.println(ssid);
   WiFi.begin(ssid, password);
@@ -60,7 +60,7 @@ void wifiInit() {
   // Serial.println("Dirección IP: ");
   Serial.println(WiFi.localIP());
 }
-
+  
 void callback(char* topic, byte* payload, unsigned int length) {
   String incoming = "";
   char playload_stringR[length + 1];
@@ -75,25 +75,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print("Mensaje recibido ->  ");
   Serial.print(topic);
   Serial.println("");
-  // Serial.println("Mensaje-> " + incoming );
-
- //-----------------NO USAR------------------------
-  // memcpy(playload_string, payload, length);
-  // playload_string[length] = '\0';
-  // var = atoi(playload_string);
-  // // Serial.println("Mensaje_SW-> " + var);
-  // memcpy(playload_string, payload, length);
-  // playload_string[length] = '\0';
-  // var_R = atoi(playload_string);
-  // // Serial.println("Mensaje_R-> " + var_R);
-  // memcpy(playload_string, payload, length);
-  // playload_string[length] = '\0';
-  // var_G = atoi(playload_string);
-  // // Serial.println("Mensaje_G-> " + var_G);
-  // memcpy(playload_string, payload, length);
-  // playload_string[length] = '\0';
-  // var_B = atoi(playload_string);
-  // // Serial.println("Mensaje_B-> " + var_B);
+  // Serial.println("Mensaje-> " + incoming ); //imprime el mensaje que recibe como string
 
 //comprueba de que topico viene el dato y lo convierte en int
   if(strcmp(topic, topic_subscribe_RED) == 0){ //comprueba led rojo
@@ -118,7 +100,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     Serial.println(var_B);
   }
   else if (strcmp(topic, topic_subscribe_SW) == 0){ //comprueba switch
-    SW = incoming.toInt();
+    SW = incoming.toInt(); //convierte el valor del sw en int
     Serial.print("Mensaje_SW->" );
     Serial.println(SW);
   }
@@ -129,12 +111,9 @@ void callback(char* topic, byte* payload, unsigned int length) {
 void reconnect() {
   while (!mqttClient.connected()) {
     Serial.print("Intentando conectarse MQTT...");
-
     if (mqttClient.connect(Client_ID)) {
       Serial.println("Conectado");
-
-      mqttClient.subscribe(topic_subscribe); //se subcribe al topic general .../LED/#
-
+      mqttClient.subscribe(topic_subscribe); //se subcribe al topic general /LED/#
     } 
     else {
       Serial.print("Fallo, rc=");
@@ -150,16 +129,17 @@ void sendData(){  //funcion para enviar datos
   currentTime=millis();
   if((currentTime-previousTime)>3000) { //manda los datos cada 3 segundos
     previousTime=currentTime;
-    mqttClient.publish(topic_publish_TEMP,"20");
-    mqttClient.publish(topic_publish_HUM,"56");
+    mqttClient.publish(topic_publish_TEMP,"20"); //envia datos al topic de temperatura
+    mqttClient.publish(topic_publish_HUM,"56"); //envia datos al topic de humedad
   }
 }
 
 void setup(){
+  //define los pines como salida
   pinMode(RED, OUTPUT);
   pinMode(GREEN, OUTPUT);
   pinMode(BLUE, OUTPUT);
-  Serial.begin(115200);
+  Serial.begin(115200); //comunicacion serie
   //config señal pwm
   ledcSetup(ledChannel_R, freq, resolution);
   ledcSetup(ledChannel_G, freq, resolution);
@@ -175,22 +155,22 @@ void setup(){
 }
 
 void loop(){
-   if (!mqttClient.connected()) {
+   if (!mqttClient.connected()) { //comprueba la coneccion con el topic
     reconnect();
   }
   mqttClient.loop();
 
-  if(SW == 1){
+  if(SW == 1){ //si el switch esta activado envia los datos del pwm al led
     ledcWrite(ledChannel_R, var_R);
     ledcWrite(ledChannel_G, var_G);
     ledcWrite(ledChannel_B, var_B);
   }
-  else if(SW == 0){
+  else if(SW == 0){ //pone un 0 a los pines del led si el switch esta apagado
     ledcWrite(ledChannel_R, 0);
     ledcWrite(ledChannel_G, 0);
     ledcWrite(ledChannel_B, 0);    
   }
 
-  sendData();
+  sendData(); //llama a la funcion para publicar en el topic
 
 }
