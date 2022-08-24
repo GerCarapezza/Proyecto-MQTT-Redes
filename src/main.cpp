@@ -16,7 +16,7 @@ const char* server  = "broker.hivemq.com";
 const int port      = 1883;
 const char* Client_ID       = "ubsajhfyuf3654hv64asd521454";
 const char* topic_subscribe = "/ET28/REDES/IG/LED/#";
-const char* topic_subscribe_SW   = "/ET28/REDES/IG/LED/WS";
+const char* topic_subscribe_SW   = "/ET28/REDES/IG/LED/SW";
 const char* topic_subscribe_RED   = "/ET28/REDES/IG/LED/R";
 const char* topic_subscribe_GREEN = "/ET28/REDES/IG/LED/G";
 const char* topic_subscribe_BLUE  = "/ET28/REDES/IG/LED/B";
@@ -68,7 +68,6 @@ void callback(char* topic, byte* payload, unsigned int length) {
   char playload_stringB[length + 1];
   char playload_string[length + 1];
 
-
  //---para recibir un mensaje como string----------
  for (int i = 0; i < length; i++) {
     incoming.concat((char)payload[i]);
@@ -119,9 +118,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     Serial.println(var_B);
   }
   else if (strcmp(topic, topic_subscribe_SW) == 0){ //comprueba switch
-    memcpy(playload_string, payload, length);
-    playload_string[length] = '\0';
-    SW = atoi(playload_string);
+    SW = incoming.toInt();
     Serial.print("Mensaje_SW->" );
     Serial.println(SW);
   }
@@ -183,22 +180,15 @@ void loop(){
   }
   mqttClient.loop();
 
-//--- para implementar un SW de encendido del led---------
-//--------------------------------------------------------
-  // if(var == 0){
-  //   digitalWrite(RED,LOW);
-  //   digitalWrite(GREEN,LOW);
-  //   digitalWrite(BLUE,LOW);
-  // } else if (var >= 1){
-  //   digitalWrite(RED,HIGH);
-  //   digitalWrite(GREEN,HIGH);
-  //   digitalWrite(BLUE,HIGH);
-  // }
-
-  if(true){
+  if(SW == 1){
     ledcWrite(ledChannel_R, var_R);
     ledcWrite(ledChannel_G, var_G);
     ledcWrite(ledChannel_B, var_B);
+  }
+  else if(SW == 0){
+    ledcWrite(ledChannel_R, 0);
+    ledcWrite(ledChannel_G, 0);
+    ledcWrite(ledChannel_B, 0);    
   }
 
   sendData();
