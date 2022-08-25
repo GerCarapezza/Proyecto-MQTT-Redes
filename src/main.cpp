@@ -1,63 +1,63 @@
 #include <Arduino.h>
 #include <main.h>
 
+bool debug = true;
+
 WiFiClient esp32Client;
 PubSubClient mqttClient(esp32Client);
+AM2320 am2320(&Wire);
 
-//variables valores cada led
-int var_R = 0;
-int var_G = 0;
-int var_B = 0;
-bool SW = 0; // valor SW
-
-//--------PWM----------------------------------------
-const int freq = 5000;
-const int ledChannel_R = 0;
-const int ledChannel_G = 1;
-const int ledChannel_B = 2;
-const int resolution = 8;
+float* temperature;
+float* humidity;
 
 void setup(){
-  //define los pines como salida
-  pinMode(RED, OUTPUT);
-  pinMode(GREEN, OUTPUT);
-  pinMode(BLUE, OUTPUT);
-  Serial.begin(115200); //comunicacion serie
-  //config señal pwm
-  ledcSetup(ledChannel_R, freq, resolution);
-  ledcSetup(ledChannel_G, freq, resolution);
-  ledcSetup(ledChannel_B, freq, resolution);
-  //asigna cada salida a un pwm
-  ledcAttachPin(RED, ledChannel_R);
-  ledcAttachPin(GREEN, ledChannel_G);
-  ledcAttachPin(BLUE, ledChannel_B);
-  delay(10);
+  Serial.begin(115200);
+  Wire.begin();
   wifiInit();
+
+  pinMode(RED_PIN, OUTPUT);
+  pinMode(GREEN_PIN, OUTPUT);
+  pinMode(BLUE_PIN, OUTPUT);
+  
+  // ------------------------------------------
+  //            Configuración PWM
+  // ------------------------------------------
+
+  ledcSetup(ledChannel_R, pwm_frec, resolution);  // Configura el canal PWM
+  ledcSetup(ledChannel_G, pwm_frec, resolution);
+  ledcSetup(ledChannel_B, pwm_frec, resolution);
+  ledcAttachPin(RED_PIN, ledChannel_R);           // Asigna el pin al canal PWM.
+  ledcAttachPin(GREEN_PIN, ledChannel_G);
+  ledcAttachPin(BLUE_PIN, ledChannel_B);
+  delay(10);
+  
+
+  
   mqttClient.setServer(server, port);
   mqttClient.setCallback(callback);
 }
 
 void loop(){
-   if (!mqttClient.connected()) { //comprueba la coneccion con el topic
+   if (!mqttClient.connected()) {       // Comprueba la coneccion con el broker
     reconnect();
   }
   mqttClient.loop();
 
-  if(SW == 1){ //si el switch esta activado envia los datos del pwm al led
-    ledcWrite(ledChannel_R, var_R);
-    ledcWrite(ledChannel_G, var_G);
-    ledcWrite(ledChannel_B, var_B);
+  if(led_brightness_payload == 1){        // Si el switch esta activado, envia los datos del pwm al led
+    ledcWrite(ledChannel_R, red_payload);
+    ledcWrite(ledChannel_G, green_payload);
+    ledcWrite(ledChannel_B, blue_payload);
   }
-  else if(SW == 0){ //pone un 0 a los pines del led si el switch esta apagado
+  else if(led_brightness_payload == 0){    // Apaga led
     ledcWrite(ledChannel_R, 0);
     ledcWrite(ledChannel_G, 0);
     ledcWrite(ledChannel_B, 0);    
   }
-
-  sendData(); //llama a la funcion para publicar en el topic
+  am2320_sensor();
+  sendData();
 }
 
-void wifiInit(){  //Inicialización del WiFi
+void wifiInit(){  /*Inicialización del WiFi*/
   Serial.printf("Conectándose a %s\n", ssid);
 
   // ! Serial.print("Conectándose a ");
@@ -70,22 +70,20 @@ void wifiInit(){  //Inicialización del WiFi
       delay(100);
   }
 
-  Serial.printf("\nConectado a %s", ssid);
-  Serial.printf("Dirección IPv4 .................. %s ", WiFi.localIP());
-
+  Serial.printf("\nConectado a %s\n", ssid);
+  Serial.printf("Dirección IPv4 .................. %u.%u.%u.%u\n", WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3]);
   // ! Serial.println("Dirección IP: ");
   // ! Serial.println(WiFi.localIP());
 }
 
 void callback(char* topic, byte* payload, unsigned int length) {
   String incoming = "";
-  char playload_stringR[length + 1];
-  char playload_stringG[length + 1];
-  char playload_stringB[length + 1];
-  char playload_string[length + 1];
+  char payload_stringR[length + 1];
+  char payload_stringG[length + 1];
+  char payload_stringB[length + 1];
+  // ! char payload_string[length + 1];
 
- //---para recibir un mensaje como string----------
- for (int i = 0; i < length; i++) {
+ for (int i = 0; i < length; i++) { // Crea el payload, concatenando los datos y luego lo convierte de byte a string
     incoming.concat((char)payload[i]);
   }
   Serial.printf("Mensaje recibido ->  %s\n", topic);
@@ -94,41 +92,40 @@ void callback(char* topic, byte* payload, unsigned int length) {
   // ! Serial.println("");
   // ! Serial.println("Mensaje-> " + incoming ); //imprime el mensaje que recibe como string
 
-//comprueba de que topico viene el dato y lo convierte en int
-  if(strcmp(topic, topic_subscribe_RED) == 0){ //comprueba led rojo
-    memcpy(playload_stringR, payload, length);
-    playload_stringR[length] = '\0';
-    var_R = atoi(playload_stringR); // convierte de string a int
-    Serial.print("Mensaje_R->");
-    Serial.println(var_R);
+  if(strcmp(topic, topic_subscribe_RED) == 0){ // Comprueba si se está suscripto al topic en que se publica
+    memcpy(payload_stringR, payload, length);
+    payload_stringR[length] = '\0';
+    red_payload = atoi(payload_stringR); // Convierte el payload de string a int
+    Serial.printf("Mensaje Red -> %i\n", red_payload);
+    // ! Serial.println(red_payload);
   }
-  else if (strcmp(topic, topic_subscribe_GREEN) == 0){ //comprueba led verde
-    memcpy(playload_stringG, payload, length);
-    playload_stringG[length] = '\0';
-    var_G = atoi(playload_stringG);
-    Serial.print("Mensaje_G->");
-    Serial.println(var_G);
+  else if (strcmp(topic, topic_subscribe_GREEN) == 0){
+    memcpy(payload_stringG, payload, length);
+    payload_stringG[length] = '\0';
+    green_payload = atoi(payload_stringG);
+    Serial.printf("Mensaje Green-> %i\n", green_payload);
+    // ! Serial.println(green_payload);
   }
-  else if (strcmp(topic, topic_subscribe_BLUE) == 0){ //comprueba led azul
-    memcpy(playload_stringB, payload, length);
-    playload_stringB[length] = '\0';
-    var_B = atoi(playload_stringB);
-    Serial.print("Mensaje_B->");
-    Serial.println(var_B);
+  else if (strcmp(topic, topic_subscribe_BLUE) == 0){
+    memcpy(payload_stringB, payload, length);
+    payload_stringB[length] = '\0';
+    blue_payload = atoi(payload_stringB);
+    Serial.printf("Mensaje Blue -> %i\n", blue_payload);
+    // ! Serial.println(blue_payload);
   }
-  else if (strcmp(topic, topic_subscribe_SW) == 0){ //comprueba switch
-    SW = incoming.toInt(); //convierte el valor del sw en int
-    Serial.print("Mensaje_SW->" );
-    Serial.println(SW);
+  else if (strcmp(topic, topic_subscribe_SW) == 0){
+    led_brightness_payload = incoming.toInt(); //convierte el valor del sw en int
+    Serial.printf("Mensaje Brightness -> %i\n", led_brightness_payload );
+    // ! Serial.println(led_brightness_payload);
   }
 }
 
 void reconnect() {
   while (!mqttClient.connected()) {
-    Serial.print("Intentando conectarse MQTT...\n");
+    Serial.print("Intentando conectarse al broker MQTT...\n");
     if (mqttClient.connect(Client_ID)) {
       Serial.println("Conectado\n");
-      mqttClient.subscribe(topic_subscribe); //se subcribe al topic general /LED/#
+      mqttClient.subscribe(topic_subscribe); // Suscribe al topic raíz
     } 
     else {
       Serial.printf("Fallo al conectarse al broker\nCRC = %s\n", mqttClient.state());
@@ -140,11 +137,39 @@ void reconnect() {
   }
 }
 
-void sendData(){  //funcion para enviar datos
-  currentTime=millis();
-  if((currentTime-previousTime)>3000) { //manda los datos cada 3 segundos
-    previousTime=currentTime;
-    mqttClient.publish(topic_publish_TEMP, temperature); // Envia datos al topic de temperatura
-    mqttClient.publish(topic_publish_HUM, humidity); // Envia datos al topic de humedad
+void sendData(){  // Envía los datos al broker
+  if((millis() - sendDataPreviousTime) > 3000) { // Publica cada 3 segundos
+    sendDataPreviousTime = millis();
+    mqttClient.publish(topic_publish_TEMP, (char*)temperature); // Envia datos al topic de temperatura
+    mqttClient.publish(topic_publish_HUM, (char*)humidity); // Envia datos al topic de humedad
+    // TODO: Implementar el cambio de float a char para enviar los datos del sensor
   }
+}
+
+void am2320_sensor() {
+  if((millis() - sensorPreviousTime) > 2000) { // Modifica cada 2 segundos
+    sensorPreviousTime = millis();
+    if(debug) Serial.println(F("Chip = AM2320"));
+    switch(am2320.Read()) {
+      case 2:
+        Serial.println(F("  CRC failed"));
+        break;
+      case 1:
+        Serial.println(F("  Sensor offline"));
+        break;
+      case 0:
+        humidity = &am2320.Humidity;
+        if(debug)Serial.printf("\tHumidity = %f%\n", am2320.Humidity);
+        // Serial.print(F("\tHumidity = "));
+        // Serial.print(am2320.Humidity);
+        // Serial.println(F("%"));
+        temperature = &am2320.cTemp;
+        if(debug)Serial.printf("\tTemperature = %f%\n", am2320.cTemp);
+        // Serial.print(F("\tTemperature = "));
+        // Serial.print(am2320.cTemp);
+        // Serial.println(F("°C"));
+        // Serial.println();
+        break;
+    }
+  } // delay(2000);
 }
