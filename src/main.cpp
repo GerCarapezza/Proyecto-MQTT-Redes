@@ -38,16 +38,7 @@ void loop(){
   }
   mqttClient.loop();
 
-  if(led_brightness_payload == 1){        // Si el switch esta activado, envia los datos del pwm al led
-    ledcWrite(ledChannel_R, red_payload);
-    ledcWrite(ledChannel_G, green_payload);
-    ledcWrite(ledChannel_B, blue_payload);
-  }
-  else if(led_brightness_payload == 0){    // Apaga led
-    ledcWrite(ledChannel_R, 0);
-    ledcWrite(ledChannel_G, 0);
-    ledcWrite(ledChannel_B, 0);    
-  }
+  controlRGB();
   am2320_sensor();
   sendData();
 }
@@ -78,14 +69,15 @@ void callback(char* topic, byte* payload, unsigned int length) {
   char payload_stringB[length + 1];
   // ! char payload_string[length + 1];
 
- for (int i = 0; i < length; i++) { // Crea el payload, concatenando los datos y luego lo convierte de byte a string
+ for (size_t i = 0; i < length; i++) { // Crea el payload, concatenando los datos y luego lo convierte de byte a string
     incoming.concat((char)payload[i]);
   }
   Serial.printf("Mensaje recibido ->  %s\n", topic);
   // ! Serial.print("Mensaje recibido ->  ");
   // ! Serial.print(topic);
   // ! Serial.println("");
-  // ! Serial.println("Mensaje-> " + incoming ); //imprime el mensaje que recibe como string
+  Serial.println("Mensaje-> " + incoming ); //imprime el mensaje que recibe como string
+
 
   if(strcmp(topic, topic_subscribe_RED) == 0){ // Comprueba si se está suscripto al topic en que se publica
     memcpy(payload_stringR, payload, length);
@@ -110,8 +102,26 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
   else if (strcmp(topic, topic_subscribe_SW) == 0){
     led_brightness_payload = incoming.toInt(); //convierte el valor del sw en int
-    Serial.printf("Mensaje Brightness -> %i\n", led_brightness_payload );
-    // ! Serial.println(led_brightness_payload);
+    Serial.printf("Mensaje Brightness -> %i\n", led_brightness_payload);
+    //! Serial.println(led_brightness_payload);
+  }
+  else if (strcmp(topic, topic_subscribe_Color) == 0){
+    incoming.remove(0, 4);
+    incoming.remove(incoming.length() - 1);
+    char incomingArray[50];
+    incoming.toCharArray(incomingArray, 25);
+    char* rgb[9];
+    char* ptr = NULL;
+    byte index = 0;
+    ptr = strtok(incomingArray, ", ");
+    while (ptr != NULL) {
+      rgb[index] = ptr;
+      index++;
+      ptr = strtok(NULL, ", ");
+    }
+    red_payload = atoi(rgb[0]);
+    green_payload = atoi(rgb[1]);
+    blue_payload = atoi(rgb[2]);
   }
 }
 
@@ -160,4 +170,18 @@ void am2320_sensor() {
     }
   } 
   // ! delay(2000);
+}
+
+void controlRGB(){
+  if(led_brightness_payload >= 1){        // Si el switch esta activado, envia los datos del pwm al led
+    ledcWrite(ledChannel_R, red_payload);
+    ledcWrite(ledChannel_G, green_payload);
+    ledcWrite(ledChannel_B, blue_payload);
+  }
+  else if(led_brightness_payload == 0){    // Apaga led
+    ledcWrite(ledChannel_R, 0);
+    ledcWrite(ledChannel_G, 0);
+    ledcWrite(ledChannel_B, 0);    
+  }
+
 }
