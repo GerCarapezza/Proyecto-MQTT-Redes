@@ -7,9 +7,6 @@ WiFiClient esp32Client;
 PubSubClient mqttClient(esp32Client);
 AM2320 am2320(&Wire);
 
-float* temperature;
-float* humidity;
-
 void setup(){
   Serial.begin(115200);
   Wire.begin();
@@ -30,8 +27,6 @@ void setup(){
   ledcAttachPin(GREEN_PIN, ledChannel_G);
   ledcAttachPin(BLUE_PIN, ledChannel_B);
   delay(10);
-  
-
   
   mqttClient.setServer(server, port);
   mqttClient.setCallback(callback);
@@ -140,36 +135,29 @@ void reconnect() {
 void sendData(){  // Envía los datos al broker
   if((millis() - sendDataPreviousTime) > 3000) { // Publica cada 3 segundos
     sendDataPreviousTime = millis();
-    mqttClient.publish(topic_publish_TEMP, (char*)temperature); // Envia datos al topic de temperatura
-    mqttClient.publish(topic_publish_HUM, (char*)humidity); // Envia datos al topic de humedad
+    mqttClient.publish(topic_publish_TEMP, (char*)sensed_temperature); // Envia datos al topic de temperatura
+    mqttClient.publish(topic_publish_HUM, (char*)sensed_humidity); // Envia datos al topic de humedad
     // TODO: Implementar el cambio de float a char para enviar los datos del sensor
   }
 }
 
 void am2320_sensor() {
-  if((millis() - sensorPreviousTime) > 2000) { // Modifica cada 2 segundos
+  if((millis() - sensorPreviousTime) > 2000) { // Sensa cada 2 segundos
     sensorPreviousTime = millis();
-    if(debug) Serial.println(F("Chip = AM2320"));
-    switch(am2320.Read()) {
-      case 2:
-        Serial.println(F("  CRC failed"));
-        break;
-      case 1:
-        Serial.println(F("  Sensor offline"));
-        break;
-      case 0:
-        humidity = &am2320.Humidity;
-        if(debug)Serial.printf("\tHumidity = %f%\n", am2320.Humidity);
-        // Serial.print(F("\tHumidity = "));
-        // Serial.print(am2320.Humidity);
-        // Serial.println(F("%"));
-        temperature = &am2320.cTemp;
-        if(debug)Serial.printf("\tTemperature = %f%\n", am2320.cTemp);
-        // Serial.print(F("\tTemperature = "));
-        // Serial.print(am2320.cTemp);
-        // Serial.println(F("°C"));
-        // Serial.println();
-        break;
+    if(debug){ 
+      Serial.println(F("Chip = AM2320"));
+      switch(am2320.Read()) {
+        case 1:
+          Serial.println(F("Sensor offline"));
+          break;
+        case 0:
+          temperature = am2320.cTemp;
+          humidity = am2320.Humidity;
+          Serial.printf("\tHumidity = %f%\n", am2320.Humidity);
+          Serial.printf("\tTemperature = %f°C\n", am2320.cTemp);
+          break;
+      }
     }
-  } // delay(2000);
+  } 
+  // ! delay(2000);
 }

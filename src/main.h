@@ -18,6 +18,11 @@ byte red_payload = 0;
 byte green_payload = 0;
 byte blue_payload = 0;
 byte led_brightness_payload = 0;
+float temperature = 0;
+float humidity = 0;
+float* sensed_temperature = &temperature;
+float* sensed_humidity = &humidity;
+
 
 // --------------------------------------
 //                PWM
@@ -46,26 +51,28 @@ unsigned long sensorPreviousTime = 0;
 // -------------------------------------
 // TODO: Descomentar las credenciales que correspondan
 
+const char* ssid     = "Fibertel WiFi666 2.4GHz";
+const char* password = "0044304973";
 // const char* ssid     = "Ivoo";
 // const char* password = "f42xiS3Hj";
 // const char* ssid     = "Wifi 1234";
 // const char* password = "carapezza3574";
-const char* ssid     = "S11";
-const char* password = "ger12345";
+// const char* ssid     = "S11";
+// const char* password = "ger12345";
 
 // --------------------------------------
 //                  MQTT
 // --------------------------------------
 const char* server = "broker.hivemq.com";
 const int port = 1883;
-const char* Client_ID = "ubsajhfyuf3654hv64asd521454wreg";
-const char* topic_subscribe = "/ET28/REDES/IG/LED/#";
-const char* topic_subscribe_SW = "/ET28/REDES/IG/LED/SW";
-const char* topic_subscribe_RED = "/ET28/REDES/IG/LED/R";
-const char* topic_subscribe_GREEN = "/ET28/REDES/IG/LED/G";
-const char* topic_subscribe_BLUE = "/ET28/REDES/IG/LED/B";
-const char* topic_publish_TEMP = "/ET28/REDES/IG/SENSOR/TEMP";
-const char* topic_publish_HUM  = "/ET28/REDES/IG/SENSOR/HUM";
+const char* Client_ID = "kjaf1234hgb12ghj54l234hgj15123hjgl5uyg";
+const char* topic_subscribe = "/et28/redes/ig/led/#";
+const char* topic_subscribe_SW = "/et28/redes/ig/led/sw";
+const char* topic_subscribe_RED = "/et28/redes/ig/led/R";
+const char* topic_subscribe_GREEN = "/et28/redes/ig/led/G";
+const char* topic_subscribe_BLUE = "/et28/redes/ig/led/B";
+const char* topic_publish_TEMP = "/et28/redes/ig/sensor/tempc";                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+const char* topic_publish_HUM  = "/et28/redes/ig/sensor/hum";
 
 
 // * -------------------------------
