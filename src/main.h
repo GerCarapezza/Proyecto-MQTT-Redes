@@ -51,22 +51,23 @@ unsigned long sensorPreviousTime = 0;
 // -------------------------------------
 // TODO: Descomentar las credenciales que correspondan
 
-const char* ssid     = "Fibertel WiFi666 2.4GHz";
-const char* password = "0044304973";
+// const char* ssid     = "Fibertel WiFi666 2.4GHz";
+// const char* password = "0044304973";
 // const char* ssid     = "Ivoo";
 // const char* password = "f42xiS3Hj";
 // const char* ssid     = "Wifi 1234";
 // const char* password = "carapezza3574";
-// const char* ssid     = "S11";
-// const char* password = "ger12345";
+const char* ssid     = "S11";
+const char* password = "ger12345";
 
 // --------------------------------------
 //                  MQTT
 // --------------------------------------
 const char* server = "broker.hivemq.com";
 const int port = 1883;
-const char* Client_ID = "kjaf1234hgb12ghj54l234hgj15123hjgl5uyg";
+const char* Client_ID = "kjaf1234hgb12ghj54l234hgj15gl5uyg";
 const char* topic_subscribe = "/et28/redes/ig/led/#";
+const char* topic_subscribe_Color = "/et28/redes/ig/led/cp";
 const char* topic_subscribe_SW = "/et28/redes/ig/led/sw";
 const char* topic_subscribe_RED = "/et28/redes/ig/led/R";
 const char* topic_subscribe_GREEN = "/et28/redes/ig/led/G";
@@ -84,3 +85,4 @@ void callback(char* topic, byte* payload, unsigned int length);
 void reconnect();
 void sendData();
 void am2320_sensor();
+void controlRGB();
