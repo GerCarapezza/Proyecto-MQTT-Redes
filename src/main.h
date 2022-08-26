@@ -17,11 +17,11 @@
 byte red_payload = 0;
 byte green_payload = 0;
 byte blue_payload = 0;
-byte led_brightness_payload = 0;
+byte led_switch_payload = 0;
 float temperature = 0;
 float humidity = 0;
-float* sensed_temperature = &temperature;
-float* sensed_humidity = &humidity;
+char sensed_temperature[10];    // Buffers para enviar la data. Ver https://arduino.stackexchange.com/questions/26832/how-do-i-convert-a-float-into-char
+char sensed_humidity[10];
 
 
 // --------------------------------------
