@@ -48,12 +48,7 @@ void loop(){
 
   mqttClient.loop();
 
-<<<<<<< HEAD
   controlRGB();
-
-=======
-
->>>>>>> origin/main
 }
 
 void wifiInit(){  /*Inicialización del WiFi*/
@@ -82,22 +77,17 @@ void callback(char* topic, byte* payload, unsigned int length) {
   char payload_stringB[length + 1];
   // ! char payload_string[length + 1];
 
-<<<<<<< HEAD
  for (size_t i = 0; i < length; i++) { // Crea el payload, concatenando los datos y luego lo convierte de byte a string
     incoming.concat((char)payload[i]);
   }
   Serial.printf("Mensaje recibido ->  %s\n", topic);
   Serial.println("Mensaje-> " + incoming ); //imprime el mensaje que recibe como string
 
-=======
-
->>>>>>> origin/main
 
   if (strcmp(topic, topic_subscribe_SW) == 0){ // Comprueba si se está suscripto al topic en que se publica
     led_switch_payload = incoming.toInt(); // Convierte el payload de string a int
     Serial.printf("Mensaje Brightness -> %i\n", led_switch_payload );
   }
-<<<<<<< HEAD
   else if (strcmp(topic, topic_subscribe_GREEN) == 0){
     memcpy(payload_stringG, payload, length);
     payload_stringG[length] = '\0';
@@ -134,9 +124,6 @@ void callback(char* topic, byte* payload, unsigned int length) {
     red_payload = atoi(rgb[0]);
     green_payload = atoi(rgb[1]);
     blue_payload = atoi(rgb[2]);
-=======
-
->>>>>>> origin/main
   }
 }
 
@@ -180,7 +167,6 @@ void am2320_sensor() {
     }
 }
 
-<<<<<<< HEAD
 void controlRGB(){
   if(led_brightness_payload >= 1){        // Si el switch esta activado, envia los datos del pwm al led
     ledcWrite(ledChannel_R, red_payload);
@@ -194,5 +180,3 @@ void controlRGB(){
   }
 
 }
-=======
->>>>>>> origin/main
