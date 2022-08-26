@@ -8,14 +8,10 @@ PubSubClient mqttClient(esp32Client);
 AM2320 am2320(&Wire);
 
 void setup(){
-  Serial.begin(115200);
-  Wire.begin();
-  wifiInit();
-
   pinMode(RED_PIN, OUTPUT);
   pinMode(GREEN_PIN, OUTPUT);
   pinMode(BLUE_PIN, OUTPUT);
-  
+
   // ------------------------------------------
   //            Configuración PWM
   // ------------------------------------------
@@ -27,27 +23,41 @@ void setup(){
   ledcAttachPin(GREEN_PIN, ledChannel_G);
   ledcAttachPin(BLUE_PIN, ledChannel_B);
   delay(10);
-  
+
+  Serial.begin(115200);
+  Wire.begin();
+  wifiInit();
   mqttClient.setServer(server, port);
   mqttClient.setCallback(callback);
+  Serial.println("Sensor Chip ............. AM2320");
 }
 
 void loop(){
-   if (!mqttClient.connected()) {       // Comprueba la coneccion con el broker
+   if (!mqttClient.connected()) {       // Comprueba la conexión con el broker
     reconnect();
   }
+
+  if((millis() - sensorPreviousTime) > 1500) { // Sensa cada 3 segundos
+    sensorPreviousTime = millis(); 
+    am2320_sensor();
+  }
+  if((millis() - sendDataPreviousTime) > 1500) { // Publica cada 3 segundos
+    sendDataPreviousTime = millis();
+    sendData();
+  }
+
   mqttClient.loop();
 
+<<<<<<< HEAD
   controlRGB();
-  am2320_sensor();
-  sendData();
+
+=======
+
+>>>>>>> origin/main
 }
 
 void wifiInit(){  /*Inicialización del WiFi*/
-  Serial.printf("Conectándose a %s\n", ssid);
-
-  // ! Serial.print("Conectándose a ");
-  // ! Serial.println(ssid);
+  Serial.printf("\nConectándose a %s\n", ssid);
 
   WiFi.begin(ssid, password);
 
@@ -58,34 +68,36 @@ void wifiInit(){  /*Inicialización del WiFi*/
 
   Serial.printf("\nConectado a %s\n", ssid);
   Serial.printf("Dirección IPv4 .................. %u.%u.%u.%u\n", WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3]);
-  // ! Serial.println("Dirección IP: ");
-  // ! Serial.println(WiFi.localIP());
+
 }
 
 void callback(char* topic, byte* payload, unsigned int length) {
+
+  // TODO: Si el switch está apagado, sería ideal que no reciba los datos del LED. Es inútil cambiar el color al LED apagado
+  // TODO: Optimizar el envío y recepción de datos.
+
   String incoming = "";
   char payload_stringR[length + 1];
   char payload_stringG[length + 1];
   char payload_stringB[length + 1];
   // ! char payload_string[length + 1];
 
+<<<<<<< HEAD
  for (size_t i = 0; i < length; i++) { // Crea el payload, concatenando los datos y luego lo convierte de byte a string
     incoming.concat((char)payload[i]);
   }
   Serial.printf("Mensaje recibido ->  %s\n", topic);
-  // ! Serial.print("Mensaje recibido ->  ");
-  // ! Serial.print(topic);
-  // ! Serial.println("");
   Serial.println("Mensaje-> " + incoming ); //imprime el mensaje que recibe como string
 
+=======
 
-  if(strcmp(topic, topic_subscribe_RED) == 0){ // Comprueba si se está suscripto al topic en que se publica
-    memcpy(payload_stringR, payload, length);
-    payload_stringR[length] = '\0';
-    red_payload = atoi(payload_stringR); // Convierte el payload de string a int
-    Serial.printf("Mensaje Red -> %i\n", red_payload);
-    // ! Serial.println(red_payload);
+>>>>>>> origin/main
+
+  if (strcmp(topic, topic_subscribe_SW) == 0){ // Comprueba si se está suscripto al topic en que se publica
+    led_switch_payload = incoming.toInt(); // Convierte el payload de string a int
+    Serial.printf("Mensaje Brightness -> %i\n", led_switch_payload );
   }
+<<<<<<< HEAD
   else if (strcmp(topic, topic_subscribe_GREEN) == 0){
     memcpy(payload_stringG, payload, length);
     payload_stringG[length] = '\0';
@@ -122,6 +134,9 @@ void callback(char* topic, byte* payload, unsigned int length) {
     red_payload = atoi(rgb[0]);
     green_payload = atoi(rgb[1]);
     blue_payload = atoi(rgb[2]);
+=======
+
+>>>>>>> origin/main
   }
 }
 
@@ -133,9 +148,7 @@ void reconnect() {
       mqttClient.subscribe(topic_subscribe); // Suscribe al topic raíz
     } 
     else {
-      Serial.printf("Fallo al conectarse al broker\nCRC = %s\n", mqttClient.state());
-      // ! Serial.print("Fallo, rc=");
-      // ! Serial.print(mqttClient.state());
+      Serial.printf("Fallo al conectarse al broker\nRC = %s\n", mqttClient.state());
       Serial.print("Intentando nuevamente en 5 segundos..."); // Espera 5 segundos antes de reintentar
       delay(5000);
     }
@@ -143,35 +156,31 @@ void reconnect() {
 }
 
 void sendData(){  // Envía los datos al broker
-  if((millis() - sendDataPreviousTime) > 3000) { // Publica cada 3 segundos
-    sendDataPreviousTime = millis();
     mqttClient.publish(topic_publish_TEMP, (char*)sensed_temperature); // Envia datos al topic de temperatura
+    if(debug) Serial.print(*sensed_temperature);
     mqttClient.publish(topic_publish_HUM, (char*)sensed_humidity); // Envia datos al topic de humedad
-    // TODO: Implementar el cambio de float a char para enviar los datos del sensor
+    if(debug) Serial.print(*sensed_humidity);
   }
-}
 
 void am2320_sensor() {
-  if((millis() - sensorPreviousTime) > 2000) { // Sensa cada 2 segundos
-    sensorPreviousTime = millis();
-    if(debug){ 
-      Serial.println(F("Chip = AM2320"));
-      switch(am2320.Read()) {
+      switch(am2320.Read()) {   // Lee el sensor
         case 1:
-          Serial.println(F("Sensor offline"));
+          if(debug) Serial.println("Sensor offline");
           break;
         case 0:
-          temperature = am2320.cTemp;
-          humidity = am2320.Humidity;
-          Serial.printf("\tHumidity = %f%\n", am2320.Humidity);
-          Serial.printf("\tTemperature = %f°C\n", am2320.cTemp);
+          temperature = am2320.cTemp;   // Guarda la temperatura.
+          humidity = am2320.Humidity;   // y la humedad
+          dtostrf(temperature, 6, 2, sensed_temperature);  // Convierte el float a string, y lo guarda en un buffer para posteriormente mandarlo por MQTT
+          dtostrf(humidity, 6, 2, sensed_humidity);
+          if(debug){
+            Serial.printf("\tHumidity = %f%\n", am2320.Humidity);
+            Serial.printf("\tTemperature = %f°C\n", am2320.cTemp);
+          }
           break;
-      }
     }
-  } 
-  // ! delay(2000);
 }
 
+<<<<<<< HEAD
 void controlRGB(){
   if(led_brightness_payload >= 1){        // Si el switch esta activado, envia los datos del pwm al led
     ledcWrite(ledChannel_R, red_payload);
@@ -185,3 +194,5 @@ void controlRGB(){
   }
 
 }
+=======
+>>>>>>> origin/main
