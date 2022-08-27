@@ -12,6 +12,8 @@ void setup(){
   pinMode(GREEN_PIN, OUTPUT);
   pinMode(BLUE_PIN, OUTPUT);
 
+
+
   // ------------------------------------------
   //            Configuración PWM
   // ------------------------------------------
@@ -19,9 +21,12 @@ void setup(){
   ledcSetup(ledChannel_R, pwm_frec, resolution);  // Configura el canal PWM
   ledcSetup(ledChannel_G, pwm_frec, resolution);
   ledcSetup(ledChannel_B, pwm_frec, resolution);
+  ledcSetup(ledChannel_brigth, pwm_frec, resolution);
   ledcAttachPin(RED_PIN, ledChannel_R);           // Asigna el pin al canal PWM.
   ledcAttachPin(GREEN_PIN, ledChannel_G);
   ledcAttachPin(BLUE_PIN, ledChannel_B);
+  ledcAttachPin(BRIGHT_PIN, ledChannel_brigth);
+
   delay(10);
 
   Serial.begin(115200);
@@ -29,7 +34,7 @@ void setup(){
   wifiInit();
   mqttClient.setServer(server, port);
   mqttClient.setCallback(callback);
-  Serial.println("Sensor Chip ............. AM2320");
+  if(debug) Serial.println("Sensor Chip ............. AM2320");
 }
 
 void loop(){
@@ -37,17 +42,13 @@ void loop(){
     reconnect();
   }
 
-  if((millis() - sensorPreviousTime) > 1500) { // Sensa cada 3 segundos
+  if((millis() - sensorPreviousTime) > 1500) { // Sensa y publica cada 1.5 segundos
     sensorPreviousTime = millis(); 
     am2320_sensor();
-  }
-  if((millis() - sendDataPreviousTime) > 1500) { // Publica cada 3 segundos
-    sendDataPreviousTime = millis();
     sendData();
   }
 
   mqttClient.loop();
-
   controlRGB();
 }
 
@@ -75,56 +76,65 @@ void callback(char* topic, byte* payload, unsigned int length) {
   char payload_stringR[length + 1];
   char payload_stringG[length + 1];
   char payload_stringB[length + 1];
-  // ! char payload_string[length + 1];
+  char payload_string_bright[length + 1];
 
  for (size_t i = 0; i < length; i++) { // Crea el payload, concatenando los datos y luego lo convierte de byte a string
     incoming.concat((char)payload[i]);
   }
   Serial.printf("Mensaje recibido ->  %s\n", topic);
-  Serial.println("Mensaje-> " + incoming ); //imprime el mensaje que recibe como string
+  if(debug)Serial.println("Mensaje-> " + incoming ); // Imprime el mensaje que recibe como string
 
 
-  if (strcmp(topic, topic_subscribe_SW) == 0){ // Comprueba si se está suscripto al topic en que se publica
-    led_switch_payload = incoming.toInt(); // Convierte el payload de string a int
-    Serial.printf("Mensaje Brightness -> %i\n", led_switch_payload );
+  // if (strcmp(topic, topic_subscribe_SW) == 0){ // Comprueba si se está suscripto al topic en que se publica
+  //   switch_payload = incoming.toInt(); // Convierte el payload de string a int
+  //   Serial.printf("Mensaje Switch -> %i\n", switch_payload );
+  // }
+
+  if (strcmp(topic, topic_subscribe_bright) == 0){  // Comprueba si se está suscripto al topic en que se publica
+    memcpy(payload_string_bright, payload, length);
+    payload_string_bright[length] = '\0';
+    led_brightness_payload = atoi(payload_string_bright); // Convierte el payload de string a int
+    Serial.printf("Mensaje Brillo -> %i\n", led_brightness_payload);
   }
+
+  else if (strcmp(topic, topic_subscribe_RED) == 0){
+    memcpy(payload_stringR, payload, length);
+    payload_stringR[length] = '\0';
+    red_payload = atoi(payload_stringR);
+    Serial.printf("Mensaje Rojo -> %i\n", red_payload);
+  }
+
   else if (strcmp(topic, topic_subscribe_GREEN) == 0){
     memcpy(payload_stringG, payload, length);
     payload_stringG[length] = '\0';
     green_payload = atoi(payload_stringG);
-    Serial.printf("Mensaje Green-> %i\n", green_payload);
-    // ! Serial.println(green_payload);
+    Serial.printf("Mensaje Verde-> %i\n", green_payload);
   }
   else if (strcmp(topic, topic_subscribe_BLUE) == 0){
     memcpy(payload_stringB, payload, length);
     payload_stringB[length] = '\0';
     blue_payload = atoi(payload_stringB);
-    Serial.printf("Mensaje Blue -> %i\n", blue_payload);
-    // ! Serial.println(blue_payload);
+    Serial.printf("Mensaje Azul -> %i\n", blue_payload);
   }
-  else if (strcmp(topic, topic_subscribe_SW) == 0){
-    led_brightness_payload = incoming.toInt(); //convierte el valor del sw en int
-    Serial.printf("Mensaje Brightness -> %i\n", led_brightness_payload);
-    //! Serial.println(led_brightness_payload);
-  }
-  else if (strcmp(topic, topic_subscribe_Color) == 0){
-    incoming.remove(0, 4);
-    incoming.remove(incoming.length() - 1);
-    char incomingArray[50];
-    incoming.toCharArray(incomingArray, 25);
-    char* rgb[9];
-    char* ptr = NULL;
-    byte index = 0;
-    ptr = strtok(incomingArray, ", ");
-    while (ptr != NULL) {
-      rgb[index] = ptr;
-      index++;
-      ptr = strtok(NULL, ", ");
-    }
-    red_payload = atoi(rgb[0]);
-    green_payload = atoi(rgb[1]);
-    blue_payload = atoi(rgb[2]);
-  }
+  
+  // else if (strcmp(topic, topic_subscribe_Color) == 0){
+  //   incoming.remove(0, 4);
+  //   incoming.remove(incoming.length() - 1);
+  //   char incomingArray[50];
+  //   incoming.toCharArray(incomingArray, 25);
+  //   char* rgb[9];
+  //   char* ptr = NULL;
+  //   byte index = 0;
+  //   ptr = strtok(incomingArray, ", ");
+  //   while (ptr != NULL) {
+  //     rgb[index] = ptr;
+  //     index++;
+  //     ptr = strtok(NULL, ", ");
+  //   }
+  //   red_payload = atoi(rgb[0]);
+  //   green_payload = atoi(rgb[1]);
+  //   blue_payload = atoi(rgb[2]);
+  // }
 }
 
 void reconnect() {
@@ -168,15 +178,16 @@ void am2320_sensor() {
 }
 
 void controlRGB(){
-  if(led_brightness_payload >= 1){        // Si el switch esta activado, envia los datos del pwm al led
+  // if(switch_payload >= 1){   // Si el switch está activado, enciende el LED 
+    ledcWrite(ledChannel_brigth, led_brightness_payload);
     ledcWrite(ledChannel_R, red_payload);
     ledcWrite(ledChannel_G, green_payload);
     ledcWrite(ledChannel_B, blue_payload);
-  }
-  else if(led_brightness_payload == 0){    // Apaga led
-    ledcWrite(ledChannel_R, 0);
-    ledcWrite(ledChannel_G, 0);
-    ledcWrite(ledChannel_B, 0);    
-  }
+  // }
 
+  // else if(switch_payload == 0){    // Apaga led
+  //   ledcWrite(ledChannel_R, 0);
+  //   ledcWrite(ledChannel_G, 0);
+  //   ledcWrite(ledChannel_B, 0);    
+  // }
 }
