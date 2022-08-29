@@ -11,6 +11,7 @@ void setup(){
   pinMode(RED_PIN, OUTPUT);
   pinMode(GREEN_PIN, OUTPUT);
   pinMode(BLUE_PIN, OUTPUT);
+  pinMode(BRIGHT_PIN, OUTPUT);
 
 
 
@@ -96,14 +97,12 @@ void callback(char* topic, byte* payload, unsigned int length) {
     led_brightness_payload = atoi(payload_string_bright); // Convierte el payload de string a int
     Serial.printf("Mensaje Brillo -> %i\n", led_brightness_payload);
   }
-
   else if (strcmp(topic, topic_subscribe_RED) == 0){
     memcpy(payload_stringR, payload, length);
     payload_stringR[length] = '\0';
     red_payload = atoi(payload_stringR);
     Serial.printf("Mensaje Rojo -> %i\n", red_payload);
   }
-
   else if (strcmp(topic, topic_subscribe_GREEN) == 0){
     memcpy(payload_stringG, payload, length);
     payload_stringG[length] = '\0';
@@ -116,31 +115,33 @@ void callback(char* topic, byte* payload, unsigned int length) {
     blue_payload = atoi(payload_stringB);
     Serial.printf("Mensaje Azul -> %i\n", blue_payload);
   }
-  
-  // else if (strcmp(topic, topic_subscribe_Color) == 0){
-  //   incoming.remove(0, 4);
-  //   incoming.remove(incoming.length() - 1);
-  //   char incomingArray[50];
-  //   incoming.toCharArray(incomingArray, 25);
-  //   char* rgb[9];
-  //   char* ptr = NULL;
-  //   byte index = 0;
-  //   ptr = strtok(incomingArray, ", ");
-  //   while (ptr != NULL) {
-  //     rgb[index] = ptr;
-  //     index++;
-  //     ptr = strtok(NULL, ", ");
-  //   }
-  //   red_payload = atoi(rgb[0]);
-  //   green_payload = atoi(rgb[1]);
-  //   blue_payload = atoi(rgb[2]);
-  // }
+  else if (strcmp(topic, topic_subscribe_Color) == 0){
+    incoming.remove(0, 4);
+    incoming.remove(incoming.length() - 1);
+    char incomingArray[50];
+    incoming.toCharArray(incomingArray, 25);
+    char* rgb[9];
+    char* ptr = NULL;
+    byte index = 0;
+    ptr = strtok(incomingArray, ", ");
+    while (ptr != NULL) {
+      rgb[index] = ptr;
+      index++;
+      ptr = strtok(NULL, ", ");
+    }
+    red_payload = atoi(rgb[0]);
+    green_payload = atoi(rgb[1]);
+    blue_payload = atoi(rgb[2]);
+    led_brightness_payload = atoi(rgb[3]);
+  }
 }
 
 void reconnect() {
   while (!mqttClient.connected()) {
+    Client_ID += String(random(0xffff), HEX); //crea una parte aleatoria del client ID.
+    if(debug) Serial.println(Client_ID); 
     Serial.print("Intentando conectarse al broker MQTT...\n");
-    if (mqttClient.connect(Client_ID)) {
+    if (mqttClient.connect(Client_ID.c_str())) {
       Serial.println("Conectado\n");
       mqttClient.subscribe(topic_subscribe); // Suscribe al topic raíz
     } 
@@ -179,7 +180,8 @@ void am2320_sensor() {
 
 void controlRGB(){
   // if(switch_payload >= 1){   // Si el switch está activado, enciende el LED 
-    ledcWrite(ledChannel_brigth, led_brightness_payload);
+    // ledcWrite(ledChannel_brigth, led_brightness_payload);
+    analogWrite(BRIGHT_PIN, led_brightness_payload);
     ledcWrite(ledChannel_R, red_payload);
     ledcWrite(ledChannel_G, green_payload);
     ledcWrite(ledChannel_B, blue_payload);
