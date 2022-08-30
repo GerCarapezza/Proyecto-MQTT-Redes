@@ -1,4 +1,4 @@
-# Proyecto-MQTT-Redes
+# Proyecto MQTT
 
 Control de LED RGB y envío de datos de temperatura y humedad por MQTT.
 * Board: NodeMCU-32s
