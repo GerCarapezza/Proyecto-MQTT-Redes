@@ -183,17 +183,17 @@ void am2320_sensor() {
 }
 
 void controlRGB(){
-  // ! if(switch_payload >= 1){   // Si el switch está activado, enciende el LED 
+  if(led_brightness_payload >= 1){   // Si el switch está activado, enciende el LED 
     ledcWrite(ledChannel_brigth, led_brightness_payload);
     // ! analogWrite(BRIGHT_PIN, led_brightness_payload);
     ledcWrite(ledChannel_R, red_payload);
     ledcWrite(ledChannel_G, green_payload);
     ledcWrite(ledChannel_B, blue_payload);
-  // }
+  }
 
-  // ! else if(switch_payload == 0){    // Apaga led
-  // !  ledcWrite(ledChannel_R, 0);
-  // !  ledcWrite(ledChannel_G, 0);
-  // !  ledcWrite(ledChannel_B, 0);    
-  // ! }
+  else if(led_brightness_payload == 0){    // Apaga led
+    ledcWrite(ledChannel_R, 0);
+    ledcWrite(ledChannel_G, 0);
+    ledcWrite(ledChannel_B, 0);    
+  }
 }
