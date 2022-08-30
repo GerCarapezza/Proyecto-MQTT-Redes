@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <main.h>
+#include "main.h"
 
 bool debug = true;
 
@@ -12,8 +12,6 @@ void setup(){
   pinMode(GREEN_PIN, OUTPUT);
   pinMode(BLUE_PIN, OUTPUT);
   pinMode(BRIGHT_PIN, OUTPUT);
-
-
 
   // ------------------------------------------
   //            Configuración PWM
@@ -54,23 +52,23 @@ void loop(){
 }
 
 void wifiInit(){  /*Inicialización del WiFi*/
-  Serial.printf("\nConectándose a %s\n", ssid);
+  if(debug)Serial.printf("\nConectándose a %s\n", ssid);
 
   WiFi.begin(ssid, password);
+  if(debug){
+    while(WiFi.status() != WL_CONNECTED) {
+      Serial.print(".");
+        delay(100);
+    }
 
-  while(WiFi.status() != WL_CONNECTED) {
-    Serial.print(".");
-      delay(100);
+    if(debug){
+      Serial.printf("\nConectado a %s\n", ssid);
+      Serial.printf("Dirección IPv4 .................. %u.%u.%u.%u\n", WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3]);
+    }
   }
-
-  Serial.printf("\nConectado a %s\n", ssid);
-  Serial.printf("Dirección IPv4 .................. %u.%u.%u.%u\n", WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3]);
-
 }
 
 void callback(char* topic, byte* payload, unsigned int length) {
-
-  // TODO: Si el switch está apagado, sería ideal que no reciba los datos del LED. Es inútil cambiar el color al LED apagado
   // TODO: Optimizar el envío y recepción de datos.
 
   String incoming = "";
@@ -82,38 +80,39 @@ void callback(char* topic, byte* payload, unsigned int length) {
  for (size_t i = 0; i < length; i++) { // Crea el payload, concatenando los datos y luego lo convierte de byte a string
     incoming.concat((char)payload[i]);
   }
-  Serial.printf("Mensaje recibido ->  %s\n", topic);
-  if(debug)Serial.println("Mensaje-> " + incoming ); // Imprime el mensaje que recibe como string
-
+  if(debug){
+    Serial.printf("Mensaje recibido ->  %s\n", topic);
+    Serial.println("Mensaje-> " + incoming ); // Imprime el mensaje que recibe como string
+  }
 
   // if (strcmp(topic, topic_subscribe_SW) == 0){ // Comprueba si se está suscripto al topic en que se publica
   //   switch_payload = incoming.toInt(); // Convierte el payload de string a int
   //   Serial.printf("Mensaje Switch -> %i\n", switch_payload );
-  // }
+  // }    // ! Ya no hay switch. El control de brillo se encarga de apagar el LED.
 
   if (strcmp(topic, topic_subscribe_bright) == 0){  // Comprueba si se está suscripto al topic en que se publica
     memcpy(payload_string_bright, payload, length);
     payload_string_bright[length] = '\0';
     led_brightness_payload = atoi(payload_string_bright); // Convierte el payload de string a int
-    Serial.printf("Mensaje Brillo -> %i\n", led_brightness_payload);
+    if(debug)Serial.printf("Mensaje Brillo -> %i\n", led_brightness_payload);
   }
   else if (strcmp(topic, topic_subscribe_RED) == 0){
     memcpy(payload_stringR, payload, length);
     payload_stringR[length] = '\0';
     red_payload = atoi(payload_stringR);
-    Serial.printf("Mensaje Rojo -> %i\n", red_payload);
+    if(debug)Serial.printf("Mensaje Rojo -> %i\n", red_payload);
   }
   else if (strcmp(topic, topic_subscribe_GREEN) == 0){
     memcpy(payload_stringG, payload, length);
     payload_stringG[length] = '\0';
     green_payload = atoi(payload_stringG);
-    Serial.printf("Mensaje Verde-> %i\n", green_payload);
+    if(debug)Serial.printf("Mensaje Verde-> %i\n", green_payload);
   }
   else if (strcmp(topic, topic_subscribe_BLUE) == 0){
     memcpy(payload_stringB, payload, length);
     payload_stringB[length] = '\0';
     blue_payload = atoi(payload_stringB);
-    Serial.printf("Mensaje Azul -> %i\n", blue_payload);
+    if(debug)Serial.printf("Mensaje Azul -> %i\n", blue_payload);
   }
   else if (strcmp(topic, topic_subscribe_Color) == 0){
     incoming.remove(0, 4);
@@ -139,15 +138,20 @@ void callback(char* topic, byte* payload, unsigned int length) {
 void reconnect() {
   while (!mqttClient.connected()) {
     Client_ID += String(random(0xffff), HEX); //crea una parte aleatoria del client ID.
-    if(debug) Serial.println(Client_ID); 
-    Serial.print("Intentando conectarse al broker MQTT...\n");
+    if(debug){
+      Serial.println(Client_ID); 
+      Serial.print("Intentando conectarse al broker MQTT...\n");
+    } 
     if (mqttClient.connect(Client_ID.c_str())) {
-      Serial.println("Conectado\n");
+      if(debug)Serial.println("Conectado\n");
       mqttClient.subscribe(topic_subscribe); // Suscribe al topic raíz
     } 
     else {
-      Serial.printf("Fallo al conectarse al broker\nRC = %s\n", mqttClient.state());
-      Serial.print("Intentando nuevamente en 5 segundos..."); // Espera 5 segundos antes de reintentar
+      if(debug){
+        Serial.printf("Fallo al conectarse al broker\nRC = %s\n", mqttClient.state());
+        Serial.print("Intentando nuevamente en 5 segundos..."); // Espera 5 segundos antes de reintentar
+      }
+      
       delay(5000);
     }
   }
@@ -179,17 +183,17 @@ void am2320_sensor() {
 }
 
 void controlRGB(){
-  // if(switch_payload >= 1){   // Si el switch está activado, enciende el LED 
+  // ! if(switch_payload >= 1){   // Si el switch está activado, enciende el LED 
     ledcWrite(ledChannel_brigth, led_brightness_payload);
-    //! analogWrite(BRIGHT_PIN, led_brightness_payload);
+    // ! analogWrite(BRIGHT_PIN, led_brightness_payload);
     ledcWrite(ledChannel_R, red_payload);
     ledcWrite(ledChannel_G, green_payload);
     ledcWrite(ledChannel_B, blue_payload);
   // }
 
-  // else if(switch_payload == 0){    // Apaga led
-  //   ledcWrite(ledChannel_R, 0);
-  //   ledcWrite(ledChannel_G, 0);
-  //   ledcWrite(ledChannel_B, 0);    
-  // }
+  // ! else if(switch_payload == 0){    // Apaga led
+  // !  ledcWrite(ledChannel_R, 0);
+  // !  ledcWrite(ledChannel_G, 0);
+  // !  ledcWrite(ledChannel_B, 0);    
+  // ! }
 }

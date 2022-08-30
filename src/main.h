@@ -19,10 +19,10 @@ byte red_payload = 0;
 byte green_payload = 0;
 byte blue_payload = 0;
 byte led_brightness_payload = 0;
-// byte switch_payload = 0;
+// ! byte switch_payload = 0;
 float temperature = 0;
 float humidity = 0;
-char sensed_temperature[10];    // Buffers para enviar la data. Ver https://arduino.stackexchange.com/questions/26832/how-do-i-convert-a-float-into-char
+char sensed_temperature[10];    // ? Buffers para enviar la data. Ver https://arduino.stackexchange.com/questions/26832/how-do-i-convert-a-float-into-char
 char sensed_humidity[10];
 
 
@@ -52,16 +52,9 @@ unsigned long sensorPreviousTime = 0;
 // -------------------------------------
 //                 WIFI
 // -------------------------------------
-// TODO: Descomentar las credenciales que correspondan
 
-// const char* ssid     = "Fibertel WiFi666 2.4GHz";
-// const char* password = "0044304973";
-// const char* ssid     = "Ivoo";
-// const char* password = "f42xiS3Hj";
-const char* ssid     = "Wifi 1234";
-const char* password = "carapezza3574";
-// const char* ssid     = "S11";
-// const char* password = "ger12345";
+const char* ssid     = "";
+const char* password = "";
 
 // --------------------------------------
 //                  MQTT
@@ -71,7 +64,7 @@ const int port = 1883;
 String Client_ID = "ESP_32_IoT_01_"; 
 const char* topic_subscribe = "/et28/redes/ig/led/#";
 const char* topic_subscribe_bright = "/et28/redes/ig/led/bright";
-// const char* topic_subscribe_SW = "/et28/redes/ig/led/sw";
+// ! const char* topic_subscribe_SW = "/et28/redes/ig/led/sw";
 const char* topic_subscribe_Color = "/et28/redes/ig/led/cp";
 const char* topic_subscribe_RED = "/et28/redes/ig/led/R";
 const char* topic_subscribe_GREEN = "/et28/redes/ig/led/G";
@@ -84,7 +77,7 @@ const char* topic_publish_HUM  = "/et28/redes/ig/sensor/hum";
 // *           FUNCIONES
 // * -------------------------------
 
-void wifiInit();    /*Inicialización del WiFi*/
+void wifiInit();
 void callback(char* topic, byte* payload, unsigned int length);
 void reconnect();
 void sendData();
