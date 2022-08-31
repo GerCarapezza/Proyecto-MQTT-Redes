@@ -1,2 +1,5 @@
-# Proyecto-MQTT-Redes
-ESP-32, Sensor de humedad y temperatura AM2320, led RGB. 
+# Proyecto MQTT
+
+Control de LED RGB y envío de datos de temperatura y humedad por MQTT.
+* Board: NodeMCU-32s
+* Sensor: Adafruit AM2320 Temperatura y Humedad Relativa
