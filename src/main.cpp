@@ -85,11 +85,6 @@ void callback(char* topic, byte* payload, unsigned int length) {
     Serial.println("Mensaje-> " + incoming ); // Imprime el mensaje que recibe como string
   }
 
-  // if (strcmp(topic, topic_subscribe_SW) == 0){ // Comprueba si se está suscripto al topic en que se publica
-  // led_brightness = incoming.toInt(); // Convierte el payload de string a int
-  //   Serial.printf("Mensaje Switch -> %iled_brightness );
-  // }    // ! Ya no hay switch. El control de brillo se encarga de apagar el LED.
-
   if (strcmp(topic, topic_subscribe_bright) == 0){  // Comprueba si se está suscripto al topic en que se publica
     memcpy(payload_string_bright, payload, length);
     payload_string_bright[length] = '\0';
