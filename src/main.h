@@ -52,7 +52,6 @@ unsigned long sensorPreviousTime = 0;
 // -------------------------------------
 //                 WIFI
 // -------------------------------------
-
 const char* ssid     = "";
 const char* password = "";
 
@@ -64,11 +63,10 @@ const int port = 1883;
 String Client_ID = "ESP_32_IoT_01_"; 
 const char* topic_subscribe = "/et28/redes/ig/led/#";
 const char* topic_subscribe_bright = "/et28/redes/ig/led/bright";
-// ! const char* topic_subscribe_SW = "/et28/redes/ig/led/sw";
 const char* topic_subscribe_Color = "/et28/redes/ig/led/cp";
-const char* topic_subscribe_RED = "/et28/redes/ig/led/R";
+const char* topic_subscribe_RED   = "/et28/redes/ig/led/R";
 const char* topic_subscribe_GREEN = "/et28/redes/ig/led/G";
-const char* topic_subscribe_BLUE = "/et28/redes/ig/led/B";
+const char* topic_subscribe_BLUE  = "/et28/redes/ig/led/B";
 const char* topic_publish_TEMP = "/et28/redes/ig/sensor/tempc";                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
 const char* topic_publish_HUM  = "/et28/redes/ig/sensor/hum";
 

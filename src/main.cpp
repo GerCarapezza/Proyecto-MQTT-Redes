@@ -85,11 +85,6 @@ void callback(char* topic, byte* payload, unsigned int length) {
     Serial.println("Mensaje-> " + incoming ); // Imprime el mensaje que recibe como string
   }
 
-  // if (strcmp(topic, topic_subscribe_SW) == 0){ // Comprueba si se está suscripto al topic en que se publica
-  //   switch_payload = incoming.toInt(); // Convierte el payload de string a int
-  //   Serial.printf("Mensaje Switch -> %i\n", switch_payload );
-  // }    // ! Ya no hay switch. El control de brillo se encarga de apagar el LED.
-
   if (strcmp(topic, topic_subscribe_bright) == 0){  // Comprueba si se está suscripto al topic en que se publica
     memcpy(payload_string_bright, payload, length);
     payload_string_bright[length] = '\0';
@@ -131,7 +126,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     red_payload = atoi(rgb[0]);
     green_payload = atoi(rgb[1]);
     blue_payload = atoi(rgb[2]);
-    led_brightness_payload = atoi(rgb[3]);
+    //! led_brightness_payload = atoi(rgb[3]);
   }
 }
 
@@ -187,7 +182,7 @@ void controlRGB(){
     ledcWrite(ledChannel_brigth, led_brightness_payload);
     // ! analogWrite(BRIGHT_PIN, led_brightness_payload);
     ledcWrite(ledChannel_R, red_payload);
-    ledcWrite(ledChannel_G, green_payload);
+    ledcWrite(ledChannel_G, green_payload * 0.85); // Multiplica por 0.8 para no cambiar la resistencia en el circuito.
     ledcWrite(ledChannel_B, blue_payload);
   }
 
